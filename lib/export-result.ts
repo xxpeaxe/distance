@@ -79,7 +79,7 @@ export async function saveResultImage(r: Result) {
   };
   const pointRows = r.points.map((p, i) => ({title: lines(`${label(r, i)} · ${p.name}`, 20, 900, true), address: p.address ? lines(p.address, 16) : []}));
   const legRows = r.mode === 'transit' ? (r.legs || []).map(leg => lines(`${leg.origin.name} → ${leg.destination.name} · ${km(leg.distance)}`, 18)) : [];
-  const policy = lines('외근 이동거리 입력 시 참고용이며 해당 사이트는 카카오맵 기반으로 제작되었습니다.\n정산 품의 상신 시 입력거리와 해당 사이트에서 계산한 거리의 차이가 클 경우 추가 증빙을 요구할 수 있습니다.', 16);
+  const policy = lines('외근 이동거리 입력 시 참고용이며 해당 사이트는 카카오맵 기반으로 제작되었습니다.\n외근 품의 작성 시 외근거리 계산 후 이미지를 저장하여 첨부 파일에 첨부하여 주시기바랍니다.\n입력거리와 실제 외근 정산 거리의 차이가 클 경우, 실 운행거리에 대한 추가 증빙을 요청할 수 있습니다.', 16);
   const pointHeight = pointRows.reduce((h, row) => h + row.title.length * 30 + row.address.length * 24 + 18, 0);
   const legHeight = legRows.length ? 48 + legRows.reduce((h, row) => h + row.length * 27 + 10, 0) : 0;
   const headerHeight = r.roundTrip ? 290 : 240;
