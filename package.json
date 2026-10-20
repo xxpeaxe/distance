@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "node scripts/test-route.mjs && node scripts/test-transit.mjs",
+    "test": "node scripts/test-route.mjs && node scripts/test-transit.mjs && node scripts/test-export-map.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
