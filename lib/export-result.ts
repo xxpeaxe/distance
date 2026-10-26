@@ -1,6 +1,8 @@
+import {formatMeasuredAt} from './measured-at';
+
 type Place = {name: string; x: string; y: string; address?: string};
 type Result = {
-  mode: 'car' | 'transit'; distance: number; roundTrip: boolean; compared: number;
+  measuredAt: string; mode: 'car' | 'transit'; distance: number; roundTrip: boolean; compared: number;
   points: Place[]; destinationIndex?: number; vertices?: number[][]; paths?: number[][][];
   outbound?: {distance: number}; returnLeg?: {distance: number};
   legs?: {origin: Place; destination: Place; distance: number}[];
@@ -82,7 +84,7 @@ export async function saveResultImage(r: Result) {
   const policy = lines('외근 이동거리 입력 시 참고용이며 해당 사이트는 카카오맵 기반으로 제작되었습니다.\n외근 품의 작성 시 외근거리 계산 후 이미지를 저장하여 첨부 파일에 첨부하여 주시기바랍니다.\n입력거리와 실제 외근 정산 거리의 차이가 클 경우, 실 운행거리에 대한 추가 증빙을 요청할 수 있습니다.', 16);
   const pointHeight = pointRows.reduce((h, row) => h + row.title.length * 30 + row.address.length * 24 + 18, 0);
   const legHeight = legRows.length ? 48 + legRows.reduce((h, row) => h + row.length * 27 + 10, 0) : 0;
-  const headerHeight = r.roundTrip ? 290 : 240;
+  const headerHeight = r.roundTrip ? 328 : 278;
   const height = headerHeight + pointHeight + 565 + legHeight + policy.length * 25 + 95;
   canvas.width = 2000; canvas.height = height * 2; ctx.scale(2, 2);
   ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 1000, height);
@@ -94,9 +96,10 @@ export async function saveResultImage(r: Result) {
   text(`${mode} · ${r.roundTrip ? '왕복' : '편도'} · ${r.mode === 'transit' ? '최소 소요시간 경로 기준' : '최단거리 기준'}`, 50, 100, 19, '#53634f');
   text(km(r.distance), 50, 143, 48, '#176b50', true);
   text(`총 ${r.distance.toLocaleString('ko-KR')} m · ${r.compared}가지 방문 순서 비교`, 50, 205, 16, '#53634f');
+  text(`측정 일시: ${formatMeasuredAt(r.measuredAt)}`, 50, 234, 17, '#53634f');
   if (r.roundTrip) {
-    text(`가는 거리 ${km(r.outbound!.distance)} + 복귀 거리 ${km(r.returnLeg!.distance)}`, 50, 243, 19);
-    text('도착지에서 출발지로 바로 복귀하는 기준입니다.', 50, 273, 16, '#53634f');
+    text(`가는 거리 ${km(r.outbound!.distance)} + 복귀 거리 ${km(r.returnLeg!.distance)}`, 50, 281, 19);
+    text('도착지에서 출발지로 바로 복귀하는 기준입니다.', 50, 311, 16, '#53634f');
   }
   let y = headerHeight + 25;
   pointRows.forEach(row => {

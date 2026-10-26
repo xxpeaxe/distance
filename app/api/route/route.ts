@@ -40,7 +40,7 @@ async function transitRoute(b:any,key:string){
  if(!best)return Response.json({error:'입력한 장소를 모두 연결하는 대중교통 경로가 없습니다. 다른 장소나 자동차를 선택해주세요.'},{status:422});
  const outbound={distance:best.distance,duration:best.duration};const destinationIndex=best.points.length-1;let returnLeg;
  if(b.roundTrip){try{const back=await transitLeg(b.destination,b.origin,key);if(!back)return Response.json({error:'도착지에서 출발지로 복귀하는 대중교통 경로가 없습니다.'},{status:422});returnLeg={distance:back.distance,duration:back.duration};best.legs.push(back);best.points.push(b.origin);Object.assign(best,transitSummary(best.legs));}catch{return Response.json({error:'대중교통 복귀 경로 조회에 실패했습니다. 다시 시도해주세요.'},{status:502});}}
- return Response.json({...best,mode:'transit',roundTrip:!!b.roundTrip,compared:orders.length,vertices:[],paths:best.legs.flatMap((l:any)=>l.paths),destinationIndex,...(b.roundTrip?{outbound,returnLeg}:{})});
+ return Response.json({...best,measuredAt:new Date().toISOString(),mode:'transit',roundTrip:!!b.roundTrip,compared:orders.length,vertices:[],paths:best.legs.flatMap((l:any)=>l.paths),destinationIndex,...(b.roundTrip?{outbound,returnLeg}:{})});
 }
 export async function POST(req:Request){
  const key=process.env.KAKAO_REST_API_KEY;if(!key)return Response.json({error:'카카오 API 키를 먼저 연결해주세요.'},{status:503});
@@ -51,10 +51,10 @@ export async function POST(req:Request){
  const orders=permutations(b.stops);let best:any=null;let failures=0;
  for(let i=0;i<orders.length;i+=3){await Promise.all(orders.slice(i,i+3).map(async(order:Place[])=>{try{const route=await lookup(b.origin,b.destination,order,key);if(!best||route.distance<best.distance||(route.distance===best.distance&&route.duration<best.duration))best=route;}catch{failures++;}}));}
  if(failures||!best)return Response.json({error:'일부 방문 순서를 비교하지 못했습니다. API 사용량과 설정을 확인한 뒤 다시 검색해주세요.'},{status:502});
- if(!b.roundTrip)return Response.json({...best,mode:'car',compared:orders.length,roundTrip:false});
+ if(!b.roundTrip)return Response.json({...best,measuredAt:new Date().toISOString(),mode:'car',compared:orders.length,roundTrip:false});
  try{
  const back=await lookup(b.destination,b.origin,[],key);
- return Response.json({mode:'car',distance:best.distance+back.distance,duration:best.duration+back.duration,vertices:[...best.vertices,...back.vertices],points:[...best.points,b.origin],compared:orders.length,roundTrip:true,outbound:{distance:best.distance,duration:best.duration},returnLeg:{distance:back.distance,duration:back.duration},destinationIndex:best.points.length-1});
+ return Response.json({measuredAt:new Date().toISOString(),mode:'car',distance:best.distance+back.distance,duration:best.duration+back.duration,vertices:[...best.vertices,...back.vertices],points:[...best.points,b.origin],compared:orders.length,roundTrip:true,outbound:{distance:best.distance,duration:best.duration},returnLeg:{distance:back.distance,duration:back.duration},destinationIndex:best.points.length-1});
  }catch{return Response.json({error:'복귀 경로를 조회하지 못했습니다. 잠시 후 왕복 거리 계산을 다시 시도해주세요.'},{status:502});}
  }catch{return Response.json({error:'요청을 처리하지 못했습니다. 입력값을 확인해주세요.'},{status:400});}
 }
