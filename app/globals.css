@@ -5,3 +5,5 @@
 .export-actions{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:18px;padding-top:16px;border-top:1px solid #e1e8da}.export-button{border:1px solid #176b50;border-radius:8px;background:#176b50;color:white;padding:11px 18px;font-size:13px;font-weight:700}.export-button:hover:not(:disabled){background:#125740}.export-button:focus-visible{outline:3px solid #82b49b;outline-offset:3px}.export-hint{font-size:11px;color:#6f8263}.result .save-status{font-size:12px;color:#176b50;margin-bottom:0}
 
 .result .measured-at{font-size:12px;line-height:1.7;color:#53634f;margin:10px 0;overflow-wrap:anywhere}
+
+.result .application-equation{font-size:14px;font-weight:700;color:#176b50;overflow-wrap:anywhere}.result .application-note,.result .extra-distance-policy{font-size:12px;line-height:1.9;color:#53634f}.result .extra-distance-policy{border-top:1px solid #e1e8da;padding-top:14px}

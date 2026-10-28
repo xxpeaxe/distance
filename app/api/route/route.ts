@@ -4,13 +4,14 @@ function permutations(a:Place[]):Place[][] {return a.length ? a.flatMap((p,i)=>p
 async function lookup(origin:Place,destination:Place,stops:Place[],key:string){
  const u=new URL('https://apis-navi.kakaomobility.com/v1/directions');
  u.searchParams.set('origin',origin.x+','+origin.y);u.searchParams.set('destination',destination.x+','+destination.y);
- u.searchParams.set('priority','DISTANCE');u.searchParams.set('summary','false');
+ u.searchParams.set('priority','RECOMMEND');u.searchParams.set('summary','false');
  if(stops.length)u.searchParams.set('waypoints',stops.map(p=>p.x+','+p.y).join('|'));
  const r=await fetch(u,{headers:{Authorization:'KakaoAK '+key},signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error();
  const data:any=await r.json();const route=data.routes?.[0];if(route?.result_code!==0)throw Error();
  const vertices:number[][]=[];for(const s of route.sections||[])for(const road of s.roads||[])for(let j=0;j<road.vertexes.length;j+=2)vertices.push([road.vertexes[j],road.vertexes[j+1]]);
  return {distance:route.summary.distance,duration:route.summary.duration,vertices,points:[origin,...stops,destination]};
 }
+function carResult(route:any,compared:number,roundTrip:boolean){return Response.json({...route,mode:'car',routePriority:'RECOMMEND',extraDistance:20000,applicationDistance:route.distance+20000,compared,roundTrip,measuredAt:new Date().toISOString()});}
 function pairKey(a:Place,b:Place){return [a.x,a.y,b.x,b.y].join(',');}
 async function transitLeg(origin:Place,destination:Place,key:string){
  if(+origin.x===+destination.x&&+origin.y===+destination.y)return {origin,destination,distance:0,duration:0,transfers:0,fare:0,walkingDistance:0,steps:[],paths:[]};
@@ -49,12 +50,12 @@ export async function POST(req:Request){
  if(!Array.isArray(b.stops)||b.stops.length>4||![b.origin,...b.stops,b.destination].every(valid)||('roundTrip'in b&&typeof b.roundTrip!=='boolean')||('mode'in b&&!['car','transit'].includes(b.mode)))return Response.json({error:'국내 장소와 이동수단을 올바르게 선택해주세요.'},{status:400});
  if(b.mode==='transit')return await transitRoute(b,key);
  const orders=permutations(b.stops);let best:any=null;let failures=0;
- for(let i=0;i<orders.length;i+=3){await Promise.all(orders.slice(i,i+3).map(async(order:Place[])=>{try{const route=await lookup(b.origin,b.destination,order,key);if(!best||route.distance<best.distance||(route.distance===best.distance&&route.duration<best.duration))best=route;}catch{failures++;}}));}
+ for(let i=0;i<orders.length;i+=3){await Promise.all(orders.slice(i,i+3).map(async(order:Place[])=>{try{const route=await lookup(b.origin,b.destination,order,key);if(!best||route.duration<best.duration||(route.duration===best.duration&&route.distance<best.distance))best=route;}catch{failures++;}}));}
  if(failures||!best)return Response.json({error:'일부 방문 순서를 비교하지 못했습니다. API 사용량과 설정을 확인한 뒤 다시 검색해주세요.'},{status:502});
- if(!b.roundTrip)return Response.json({...best,measuredAt:new Date().toISOString(),mode:'car',compared:orders.length,roundTrip:false});
+ if(!b.roundTrip)return carResult(best,orders.length,false);
  try{
  const back=await lookup(b.destination,b.origin,[],key);
- return Response.json({measuredAt:new Date().toISOString(),mode:'car',distance:best.distance+back.distance,duration:best.duration+back.duration,vertices:[...best.vertices,...back.vertices],points:[...best.points,b.origin],compared:orders.length,roundTrip:true,outbound:{distance:best.distance,duration:best.duration},returnLeg:{distance:back.distance,duration:back.duration},destinationIndex:best.points.length-1});
+ return carResult({distance:best.distance+back.distance,duration:best.duration+back.duration,vertices:[...best.vertices,...back.vertices],points:[...best.points,b.origin],compared:orders.length,roundTrip:true,outbound:{distance:best.distance,duration:best.duration},returnLeg:{distance:back.distance,duration:back.duration},destinationIndex:best.points.length-1},orders.length,true);
  }catch{return Response.json({error:'복귀 경로를 조회하지 못했습니다. 잠시 후 왕복 거리 계산을 다시 시도해주세요.'},{status:502});}
  }catch{return Response.json({error:'요청을 처리하지 못했습니다. 입력값을 확인해주세요.'},{status:400});}
 }
