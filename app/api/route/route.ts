@@ -11,7 +11,7 @@ async function lookup(origin:Place,destination:Place,stops:Place[],key:string){
  const vertices:number[][]=[];for(const s of route.sections||[])for(const road of s.roads||[])for(let j=0;j<road.vertexes.length;j+=2)vertices.push([road.vertexes[j],road.vertexes[j+1]]);
  return {distance:route.summary.distance,duration:route.summary.duration,vertices,points:[origin,...stops,destination]};
 }
-function carResult(route:any,compared:number,roundTrip:boolean){return Response.json({...route,mode:'car',routePriority:'RECOMMEND',extraDistance:20000,applicationDistance:route.distance+20000,compared,roundTrip,measuredAt:new Date().toISOString()});}
+function carResult(route:any,compared:number,roundTrip:boolean){return Response.json({...route,mode:'car',routePriority:'RECOMMEND',compared,roundTrip,measuredAt:new Date().toISOString()});}
 function pairKey(a:Place,b:Place){return [a.x,a.y,b.x,b.y].join(',');}
 async function transitLeg(origin:Place,destination:Place,key:string){
  if(+origin.x===+destination.x&&+origin.y===+destination.y)return {origin,destination,distance:0,duration:0,transfers:0,fare:0,walkingDistance:0,steps:[],paths:[]};

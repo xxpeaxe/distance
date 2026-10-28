@@ -1,9 +1,9 @@
 import {formatMeasuredAt} from './measured-at';
-import {EXTRA_DISTANCE_POLICY,APPLICATION_DISTANCE_NOTE} from './travel-policy';
+import {APPLICATION_DISTANCE_NOTE} from './travel-policy';
 
 type Place = {name: string; x: string; y: string; address?: string};
 type Result = {
-  extraDistance?: number; applicationDistance?: number; measuredAt: string; mode: 'car' | 'transit'; distance: number; roundTrip: boolean; compared: number;
+  measuredAt: string; mode: 'car' | 'transit'; distance: number; roundTrip: boolean; compared: number;
   points: Place[]; destinationIndex?: number; vertices?: number[][]; paths?: number[][][];
   outbound?: {distance: number}; returnLeg?: {distance: number};
   legs?: {origin: Place; destination: Place; distance: number}[];
@@ -82,12 +82,11 @@ export async function saveResultImage(r: Result) {
   };
   const pointRows = r.points.map((p, i) => ({title: lines(`${label(r, i)} · ${p.name}`, 20, 900, true), address: p.address ? lines(p.address, 16) : []}));
   const legRows = r.mode === 'transit' ? (r.legs || []).map(leg => lines(`${leg.origin.name} → ${leg.destination.name} · ${km(leg.distance)}`, 18)) : [];
-  const policy = lines('외근 이동거리 입력 시 참고용이며 해당 사이트는 카카오맵 기반으로 제작되었습니다.\n외근 품의 작성 시 외근거리 계산 후 이미지를 저장하여 첨부 파일에 첨부하여 주시기바랍니다.' + (r.mode === 'car' ? '\n' + EXTRA_DISTANCE_POLICY + '\n' + APPLICATION_DISTANCE_NOTE : ''), 16);
+  const policy = lines('외근 이동거리 입력 시 참고용이며 해당 사이트는 카카오맵 기반으로 제작되었습니다.\n외근 품의 작성 시 외근거리 계산 후 이미지를 저장하여 첨부 파일에 첨부하여 주시기바랍니다.' + (r.mode === 'car' ? '\n' + APPLICATION_DISTANCE_NOTE : ''), 16);
   const pointHeight = pointRows.reduce((h, row) => h + row.title.length * 30 + row.address.length * 24 + 18, 0);
   const legHeight = legRows.length ? 48 + legRows.reduce((h, row) => h + row.length * 27 + 10, 0) : 0;
   const car = r.mode === 'car';
-  const extraHeader = car ? 105 : 0;
-  const headerHeight = (r.roundTrip ? 328 : 278) + extraHeader;
+  const headerHeight = r.roundTrip ? 328 : 278;
   const height = headerHeight + pointHeight + 565 + legHeight + policy.length * 25 + 95;
   canvas.width = 2000; canvas.height = height * 2; ctx.scale(2, 2);
   ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 1000, height);
@@ -97,17 +96,12 @@ export async function saveResultImage(r: Result) {
   text('미스토코리아 외근 거리 계산', 50, 45, 32, '#176b50', true);
   const mode = r.mode === 'transit' ? '대중교통' : '자동차';
   text(`${mode} · ${r.roundTrip ? '왕복' : '편도'} · ${r.mode === 'transit' ? '최소 소요시간 경로 기준' : '추천경로 기준'}`, 50, 100, 19, '#53634f');
-  text(car ? `최종 신청거리 ${km(r.applicationDistance!)}` : km(r.distance), 50, 143, car ? 40 : 48, '#176b50', true);
-  if (car) {
-    text(`경로 측정거리 ${km(r.distance)} + 공통 추가거리 ${km(r.extraDistance!)} = ${km(r.applicationDistance!)}`, 50, 205, 23, '#176b50', true);
-    text(`외근신청서 입력거리: ${km(r.applicationDistance!)}`, 50, 244, 22, '#24382c', true);
-    text('왕복·경유지 전체 경로를 합산한 뒤 공통 추가거리 20km를 한 번 적용합니다.', 50, 282, 16, '#53634f');
-  }
-  text(`경로 측정거리 ${r.distance.toLocaleString('ko-KR')} m · ${r.compared}가지 방문 순서 비교`, 50, 205 + extraHeader, 16, '#53634f');
-  text(`측정 일시: ${formatMeasuredAt(r.measuredAt)}`, 50, 234 + extraHeader, 17, '#53634f');
+  text(car ? `외근 신청거리 ${km(r.distance)}` : km(r.distance), 50, 143, car ? 40 : 48, '#176b50', true);
+  text(`경로 측정거리 ${r.distance.toLocaleString('ko-KR')} m · ${r.compared}가지 방문 순서 비교`, 50, 205, 16, '#53634f');
+  text(`측정 일시: ${formatMeasuredAt(r.measuredAt)}`, 50, 234, 17, '#53634f');
   if (r.roundTrip) {
-    text(`가는 거리 ${km(r.outbound!.distance)} + 복귀 거리 ${km(r.returnLeg!.distance)}`, 50, 281 + extraHeader, 19);
-    text('도착지에서 출발지로 바로 복귀하는 기준입니다.', 50, 311 + extraHeader, 16, '#53634f');
+    text(`가는 거리 ${km(r.outbound!.distance)} + 복귀 거리 ${km(r.returnLeg!.distance)}`, 50, 281, 19);
+    text('도착지에서 출발지로 바로 복귀하는 기준입니다.', 50, 311, 16, '#53634f');
   }
   let y = headerHeight + 25;
   pointRows.forEach(row => {
